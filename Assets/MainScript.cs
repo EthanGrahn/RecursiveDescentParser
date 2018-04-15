@@ -9,23 +9,14 @@ public class MainScript : MonoBehaviour {
     [SerializeField]
     private Button parseButton;
     [SerializeField]
-    private Text inputText;
+    private InputField inputText;
+    [SerializeField]
+    private Text variableText;
+    [SerializeField]
+    private Text assignmentText;
 
     private Queue<string> currSymbol = new Queue<string>();
     private int index = 0;
-    private List<string> grammarTokens = new List<string>(new string[] 
-    {"program",
-    "block",
-    "stmtlist",
-    "morestmts",
-    "stmt",
-    "assign",
-    "ifstmt",
-    "whilestmt",
-    "testexpr",
-    "expr",
-    "variable",
-    "digit"});
 
     private int assignmentStatements = 0;
     private int variableReferences = 0;
@@ -58,7 +49,9 @@ public class MainScript : MonoBehaviour {
     void Parse()
     {
         FillSymbols(inputText.text);
-        Debug.Log("first == " + currSymbol.Peek() + " || count = " + currSymbol.Count);
+        Program();
+        variableText.text = variableReferences.ToString();
+        assignmentText.text = assignmentStatements.ToString();
     }
 
 #region Grammar Functions
@@ -69,8 +62,6 @@ public class MainScript : MonoBehaviour {
             currSymbol.Dequeue();
             return true;
         }
-        else if (grammarTokens.Contains(s))
-            return true;
 
         return false;
     }
@@ -79,140 +70,168 @@ public class MainScript : MonoBehaviour {
     {
         if (Accept(s))
             return true;
-        //error
-        Debug.Log("error: unexpected symbol - " + s);
-        return false;
-    }
 
-    void NextSymbol()
-    {
-        currSymbol.Dequeue();
+        throw new UnityException("ERROR: unexpected symbol - " + currSymbol.Peek());
     }
 
     void Program()
     {
+        Debug.Log("->program");
         if (Expect("program"))
         {
             Block();
             Expect(".");
+            Debug.Log("<-program");
         }
     }
 
     void Block()
     {
+        Debug.Log("->block");
         if (Expect("begin"))
         {
             StmtList();
             Expect("end");
+            Debug.Log("<-block");
         }
     }
 
     void StmtList()
     {
+        Debug.Log("->stmtlist");
         Stmt();
         MoreStmts();
+        Debug.Log("<-stmtlist");
     }
 
     void MoreStmts()
     {
+        Debug.Log("->morestmts");
         if (Accept(";"))
         {
             StmtList();
+            Debug.Log("<-morestmts");
         }
     }
 
     void Stmt()
     {
-        if (Accept("assign"))
-            Assign();
-        else if (Accept("ifstmt"))
+        Debug.Log("->stmt");
+        if (currSymbol.Peek() == "if")
             IfStmt();
-        else if (Accept("whilestmt"))
+        else if (currSymbol.Peek() == "while")
             WhileStmt();
-        else if (Accept("block"))
+        else if (currSymbol.Peek() == "begin")
             Block();
+        else if (currSymbol.Peek() == "a" || currSymbol.Peek() == "b" || currSymbol.Peek() == "c")
+            Assign();
+        Debug.Log("<-stmt");
     }
 
     void Assign()
     {
+        Debug.Log("->assign");
         Variable();
-        if (currSymbol.Peek() == "=")
+        if (Expect("="))
         {
             Expr();
+            assignmentStatements++;
+            Debug.Log("<-assign");
         }
     }
 
     void IfStmt()
     {
+        Debug.Log("->ifstmt");
         if (Accept("if"))
         {
             TestExpr();
-            if (Accept("then"))
+            if (Expect("then"))
             {
                 Stmt();
-                if (Accept("else"))
+                if (Expect("else"))
+                {
                     Stmt();
+                    Debug.Log("<-ifstmt");
+                }
             }
         }
     }
 
     void WhileStmt()
     {
+        Debug.Log("->while");
         Expect("while");
         TestExpr();
         Expect("do");
         Stmt();
+        Debug.Log("<-while");
     }
 
     void TestExpr()
     {
-        if (Accept("variable"))
-        {
-            Expect("<=");
-            Expr();
-        }
+        Debug.Log("->testexpr");
+        Variable();
+        Expect("<=");
+        Expr();
+        Debug.Log("<-testexpr");
     }
 
     void Expr()
     {
+        Debug.Log("->expr");
         if (Accept("+"))
         {
             Expr();
             Expr();
+            Debug.Log("<-expr+");
         }
         else if (Accept("*"))
         {
             Expr();
             Expr();
+            Debug.Log("<-expr*");
         }
-        else if (Accept("variable"))
+        else
         {
-            Variable();
-        }
-        else if (Accept("digit"))
-        {
-            Digit();
+            if (currSymbol.Peek() == "a" || currSymbol.Peek() == "b" || currSymbol.Peek() == "c")
+            {
+                Variable();
+                Debug.Log("<-exprV");
+            }
+            else if (currSymbol.Peek() == "0" || currSymbol.Peek() == "1" || currSymbol.Peek() == "2")
+            {
+                Digit();
+                Debug.Log("<-exprD");
+            }
         }
     }
 
     void Variable()
     {
+        Debug.Log("->variable");
         if (Accept("a"))
-            ;
+        {
+            Debug.Log("<-variableA");
+            variableReferences++;
+        }
         else if (Accept("b"))
-            ;
+        {
+            Debug.Log("<-variableB");
+            variableReferences++;
+        }
         else if (Accept("c"))
-            ;
+        {
+            Debug.Log("<-variableC");
+            variableReferences++;
+        }
     }
 
     void Digit()
     {
-        if (Accept("0"))
-            ;
-        else if (Accept("1"))
-            ;
-        else if (Accept("2"))
-            ;
+        Debug.Log("->digit");
+        if (Accept("0") || Accept("1") || Accept("2"))
+            Debug.Log("<-digit");
     }
 #endregion
 }
