@@ -43,13 +43,23 @@ public class MainScript : MonoBehaviour {
         string[] tmp = Regex.Split(input, @"\s+");
         for (int i = 0; i < tmp.Length; i++)
         {
-            currSymbol.Enqueue(tmp[i]);
+            if (tmp[i].Length > 1 && (tmp[i][tmp[i].Length - 1] == ';' || tmp[i][tmp[i].Length - 1] == '.'))
+            {
+                char extra = tmp[i][tmp[i].Length - 1];
+                tmp[i] = tmp[i].Remove(tmp[i].Length - 1);
+                currSymbol.Enqueue(tmp[i]);
+                currSymbol.Enqueue(extra.ToString());
+            }
+            else
+            {
+                currSymbol.Enqueue(tmp[i]);
+            }
         }
         parseLog.AddItem("Loaded " + currSymbol.Count.ToString() + " symbols", Color.white);
-        //foreach (string s in tmp)
-        //{
+        // foreach (string s in tmp)
+        // {
         //    Debug.Log(s);
-        //}
+        // }
     }
 
     void Parse()
@@ -119,9 +129,18 @@ public class MainScript : MonoBehaviour {
 
         if (Accept(";"))
         {
+            int start = currSymbol.Count;
             StmtList();
+            if (start > currSymbol.Count) // the difference in queue size indicates it wasn't empty after the ;
+                parseLog.AddItem("Accepted <morestmts>", Color.green);
+            else
+            {
+                parseLog.AddItem("Error: ';' without <stmtlist>", Color.red);
+                throw new UnityException("Error: ';' without <stmtlist>");
+            }
         }
-        parseLog.AddItem("Accepted <morestmts>", Color.green);
+        else
+            parseLog.AddItem("Accepted <morestmts> as empty", Color.green);
     }
 
     void Stmt()
