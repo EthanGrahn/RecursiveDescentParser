@@ -18,6 +18,10 @@ public class MainScript : MonoBehaviour {
     private ParseLog parseLog;
 
     private Queue<string> currSymbol = new Queue<string>();
+    private HashSet<string> nonSpaceSymbols = new HashSet<string>
+    {
+        "<=", "+", "-", ";", ".", "*"
+    };
 
     private int assignmentStatements = 0;
     private int variableReferences = 0;
@@ -40,26 +44,32 @@ public class MainScript : MonoBehaviour {
 
     void FillSymbols(string input)
     {
+        foreach (string s in nonSpaceSymbols)
+        {
+            input = input.Replace(s, " " + s + " ");
+        }
+
+        for (int i = 1; i < input.Length; i++)
+        {
+            if (input[i] == '=' && input[i - 1] != '<')
+            {
+                input = input.Insert(i - 1, " ");
+                i++;
+                input = input.Insert(i, " ");
+                i++;
+            }
+        }
+
         string[] tmp = Regex.Split(input, @"\s+");
         for (int i = 0; i < tmp.Length; i++)
         {
-            if (tmp[i].Length > 1 && (tmp[i][tmp[i].Length - 1] == ';' || tmp[i][tmp[i].Length - 1] == '.'))
-            {
-                char extra = tmp[i][tmp[i].Length - 1];
-                tmp[i] = tmp[i].Remove(tmp[i].Length - 1);
                 currSymbol.Enqueue(tmp[i]);
-                currSymbol.Enqueue(extra.ToString());
-            }
-            else
-            {
-                currSymbol.Enqueue(tmp[i]);
-            }
         }
         parseLog.AddItem("Loaded " + currSymbol.Count.ToString() + " symbols", Color.white);
-        // foreach (string s in tmp)
-        // {
+        //foreach (string s in tmp)
+        //{
         //    Debug.Log(s);
-        // }
+        //}
     }
 
     void Parse()
